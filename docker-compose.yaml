@@ -1,0 +1,19 @@
+version: '2'
+
+
+services:
+  ssh-ftp-server:
+    build:
+      context: build/
+    ports:
+      - "0.0.0.0:${EXPOSE}:22"
+    volumes:
+      - ./home/:/home/
+      - ./data/:/var/ssh-box/
+    environment:
+      - USR=${USR}
+      - NAME=${NAME}
+    restart: unless-stopped
+
+
+

@@ -24,7 +24,9 @@ chown -R root:root /etc/ssh/
 chmod 0644 /etc/ssh/*
 chmod 0600 /etc/ssh/*key
 
-groupadd -g 997 box
+if ! getent group box; then
+  groupadd -g 997 box
+fi
 
 chown root:root /home
 chmod 0755 /home

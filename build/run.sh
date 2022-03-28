@@ -6,6 +6,7 @@ basedir=/var/ssh-box/
 test -f "$basedir"/ssh-cache/ssh_host_rsa_key || {
     ssh-keygen -A
     grep -v -e AuthorizedKeys -e PermitEmptyPasswords -e PasswordAuthentication \
+            -e Subsystem \
         /etc/ssh/sshd_config > /etc/ssh/sshd_config.tmp
     mv /etc/ssh/sshd_config.tmp /etc/ssh/sshd_config
     cat <<EOF >> /etc/ssh/sshd_config
@@ -14,6 +15,7 @@ AuthorizedKeysCommand /usr/local/sbin/get_pub_keys.sh
 AuthorizedKeysCommandUser root
 PermitEmptyPasswords no
 PasswordAuthentication no
+Subsystem sftp /usr/lib/ssh/sftp-server -u 002
 EOF
     rsync -va /etc/ssh/ "$basedir"/ssh-cache/
 }
@@ -27,7 +29,7 @@ chmod 0600 /etc/ssh/*key
 if getent group box; then
   echo Group already added
 else
-  groupadd -g 997 box
+  groupadd -g $GRP box
 fi
 
 chown root:root /home

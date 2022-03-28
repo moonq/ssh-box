@@ -24,7 +24,9 @@ chown -R root:root /etc/ssh/
 chmod 0644 /etc/ssh/*
 chmod 0600 /etc/ssh/*key
 
-if ! getent group box; then
+if getent group box; then
+  echo Group already added
+else
   groupadd -g 997 box
 fi
 

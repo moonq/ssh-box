@@ -1,7 +1,6 @@
 #!/bin/bash
-set -e
-set -x
-set -u
+set -exu
+shopt -s nullglob
 basedir=/var/ssh-box/
 test -f "$basedir"/ssh-cache/ssh_host_rsa_key || {
     ssh-keygen -A
@@ -19,12 +18,15 @@ Subsystem sftp /usr/lib/ssh/sftp-server -u 002
 EOF
     rsync -va /etc/ssh/ "$basedir"/ssh-cache/
 }
-mkdir -p "$basedir"/users
+mkdir -p "$basedir"/users "$basedir"/ssh-cache "$basedir"/home
 rsync -va --del "$basedir"/ssh-cache/ /etc/ssh/
-chown -R $USR "$basedir"
+chown -R $USR "$basedir"/users "$basedir"/ssh-cache
 chown -R root:root /etc/ssh/
 chmod 0644 /etc/ssh/*
 chmod 0600 /etc/ssh/*key
+chmod 0700 "$basedir"/ssh-cache/ "$basedir"/users/
+chmod 0600 "$basedir"/ssh-cache/*
+chmod 0711 "$basedir"
 
 if getent group box; then
   echo Group already added
@@ -32,8 +34,10 @@ else
   groupadd -g $GRP box
 fi
 
-chown root:root /home
-chmod 0755 /home
+rmdir /home
+chown root:root "$basedir"/home
+chmod 0711 "$basedir"/home
+ln -sfT "$basedir"/home /home
 
 touch /tmp/empty_keys
 chmod 0200 /tmp/empty_keys

@@ -39,5 +39,7 @@ for file in *; do
   rm -f "/home/$user/.ssh/authorized_keys"
   chown -R "$user":box "/home/$user/data"
   chmod -R u+rwX,g+rwX,o+X "/home/$user/data"
+  chmod 0600 "$file"
+  chown $USR "$file"
 done
-
+chmod 0700 /var/ssh-box/users

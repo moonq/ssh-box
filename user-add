@@ -1,0 +1,28 @@
+#!/bin/bash
+set -eu
+echo Existing users
+ls -1 data/users/
+
+plusone=$( ls -1 data/users | sed 's/-.*//' | tail -n 1 )
+if [[ -z "$plusone" ]]; then
+  plusone=2000
+fi
+plusone=$(( plusone + 1 ))
+
+echo Add user, select UID
+read -e -i $plusone new_uid
+echo Type username
+read -e new_user
+
+echo data/users/"${new_uid}-${new_user}"
+echo Edit authorized_keys, or break process
+read foo
+
+eval ${EDITOR:- vim} data/users/"${new_uid}-${new_user}"
+
+
+if test -s data/users/"${new_uid}-${new_user}"; then
+    echo Running user update
+    make update-users
+fi
+

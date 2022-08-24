@@ -6,8 +6,6 @@ RUN apk add --no-cache \
   rsync \
   shadow
 
-ADD get_pub_keys.sh /usr/local/sbin/get_pub_keys.sh
-ADD update_users.sh /usr/local/sbin/update_users.sh
-ADD run.sh /usr/local/sbin/run_ssh_box.sh
+COPY get_pub_keys.sh update_users.sh run_ssh_box.sh /usr/local/sbin/
 CMD bash /usr/local/sbin/run_ssh_box.sh
 

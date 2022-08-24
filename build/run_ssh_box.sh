@@ -3,12 +3,12 @@ set -exu
 shopt -s nullglob
 basedir=/var/ssh-box/
 test -f "$basedir"/ssh-cache/ssh_host_rsa_key || {
-    ssh-keygen -A
-    grep -v -e AuthorizedKeys -e PermitEmptyPasswords -e PasswordAuthentication \
-            -e Subsystem \
-        /etc/ssh/sshd_config > /etc/ssh/sshd_config.tmp
-    mv /etc/ssh/sshd_config.tmp /etc/ssh/sshd_config
-    cat <<EOF >> /etc/ssh/sshd_config
+  ssh-keygen -A
+  grep -v -e AuthorizedKeys -e PermitEmptyPasswords -e PasswordAuthentication \
+    -e Subsystem \
+    /etc/ssh/sshd_config > /etc/ssh/sshd_config.tmp
+  mv /etc/ssh/sshd_config.tmp /etc/ssh/sshd_config
+  cat <<EOF >> /etc/ssh/sshd_config
 AuthorizedKeysFile    /tmp/empty_keys
 AuthorizedKeysCommand /usr/local/sbin/get_pub_keys.sh
 AuthorizedKeysCommandUser root
@@ -16,7 +16,7 @@ PermitEmptyPasswords no
 PasswordAuthentication no
 Subsystem sftp /usr/lib/ssh/sftp-server -u 002
 EOF
-    rsync -va /etc/ssh/ "$basedir"/ssh-cache/
+  rsync -va /etc/ssh/ "$basedir"/ssh-cache/
 }
 mkdir -p "$basedir"/users "$basedir"/ssh-cache "$basedir"/home
 rsync -va --del "$basedir"/ssh-cache/ /etc/ssh/
@@ -33,10 +33,16 @@ if getent group box; then
 else
   groupadd -g $GRP box
 fi
+if getent group trusted; then
+  echo Trusted already added
+else
+  groupadd trusted
+fi
 
-rmdir /home
-chown root:root "$basedir"/home
-chmod 0711 "$basedir"/home
+
+rmdir /home || true
+chown root:trusted "$basedir"/home
+chmod 0751 "$basedir"/home
 ln -sfT "$basedir"/home /home
 
 touch /tmp/empty_keys
@@ -49,8 +55,7 @@ cat <<EOF > /etc/profile
 alias ll='ls -al'
 EOF
 
-echo "-~''~- SSH-Box ~-..-~" > /etc/motd
-echo "$NAME" >> /etc/motd
+echo "$NAME" > /etc/motd
 
 update_users.sh
 

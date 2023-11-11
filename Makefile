@@ -28,7 +28,8 @@ service-update: ## Pull never image
 user-update: ## Run user creation scripts
 	docker-compose exec ssh-ftp-server update_users.sh
 
-user-add:
+.PHONY: user-add
+user-add: ## Interactively add a user
 	bash user-add
 
 

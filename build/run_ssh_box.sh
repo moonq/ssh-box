@@ -59,4 +59,8 @@ echo "$NAME" > /etc/motd
 
 update_users.sh
 
-"/usr/sbin/sshd" "-D" "-e" "-f" "/etc/ssh/sshd_config"
+touch /var/ssh-box/sshd.log
+chmod 0600 /var/ssh-box/sshd.log
+"/usr/sbin/sshd" "-D" "-e" "-f" "/etc/ssh/sshd_config" 2>&1 | \
+  ts "%b %d %H:%M:%S $HOSTNAME sshd[$$]:" | \
+  tee -a /var/ssh-box/sshd.log

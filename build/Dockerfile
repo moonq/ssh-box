@@ -4,7 +4,9 @@ RUN apk add --no-cache \
   openssh-server-pam \
   bash \
   rsync \
-  shadow
+  moreutils \
+  shadow \
+  tzdata
 
 COPY get_pub_keys.sh update_users.sh run_ssh_box.sh /usr/local/sbin/
 CMD bash /usr/local/sbin/run_ssh_box.sh

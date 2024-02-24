@@ -13,6 +13,7 @@ services:
       - USR=${USR}
       - NAME=${NAME}
       - GRP=${GRP}
+      - TZ=${TZ}
     restart: unless-stopped
 
 

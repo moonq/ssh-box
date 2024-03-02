@@ -1,10 +1,11 @@
 FROM alpine
 RUN apk add --no-cache \
   openssh \
-  openssh-server-pam \
   bash \
-  rsync \
+  logrotate \
   moreutils \
+  openssh-server-pam \
+  rsync \
   shadow \
   tzdata
 

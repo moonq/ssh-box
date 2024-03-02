@@ -18,7 +18,7 @@ Subsystem sftp /usr/lib/ssh/sftp-server -u 002
 EOF
   rsync -va /etc/ssh/ "$basedir"/ssh-cache/
 }
-mkdir -p "$basedir"/users "$basedir"/ssh-cache "$basedir"/home
+mkdir -p "$basedir"/users "$basedir"/ssh-cache "$basedir"/home "$basedir"/log
 rsync -va --del "$basedir"/ssh-cache/ /etc/ssh/
 chown -R $USR "$basedir"/users "$basedir"/ssh-cache
 chown -R root:root /etc/ssh/
@@ -47,20 +47,75 @@ ln -sfT "$basedir"/home /home
 
 touch /tmp/empty_keys
 chmod 0200 /tmp/empty_keys
+cat <<EOF > /etc/profile
+alias ll='ls -al'
+EOF
+echo "$NAME" > /etc/motd
+
+cat <<EOF > /usr/local/sbin/sshd_start.sh
+#!/bin/sh
+exec "/usr/sbin/sshd" "-D" "-e" -g 60 "-f" "/etc/ssh/sshd_config" 2>&1 | \
+  ts "%b %d %H:%M:%S ${HOSTNAME} sshd[$$]:" >> "${basedir}"/log/sshd.log
+EOF
+
+cat <<'EOF' > /usr/local/sbin/sshd_restart.sh
+#!/bin/sh
+test -e /var/run/sshd.pid && {
+    kill `cat /var/run/sshd.pid`
+}
+/usr/local/sbin/sshd_start.sh &
+EOF
+
+cat <<'EOF' > /etc/logrotate.d/sshd
+/var/log/sshd.log
+{
+	rotate 12
+	monthly
+	missingok
+	notifempty
+	compress
+	delaycompress
+	sharedscripts
+	postrotate
+		[ -x /usr/local/sbin/sshd_restart.sh ] && /usr/local/sbin/sshd_restart.sh || true
+	endscript
+}
+EOF
+
+cat <<'EOF' > /usr/local/sbin/logrotate_weekly.sh
+#!/bin/sh
+/usr/sbin/logrotate -s /var/log/logrotate.state /etc/logrotate.conf
+EOF
+
+ln -sfT /usr/local/sbin/logrotate_weekly.sh /etc/periodic/daily/logrotate_weekly
+
+cat <<'EOF' > /usr/local/sbin/health_check.sh
+#!/bin/sh
+
+_fail() {
+  echo sshd missing | \
+    ts "%b %d %H:%M:%S ${HOSTNAME} health[$$]:" >> /var/log/health.log
+  kill -9 -1
+}
+
+test -e /var/run/sshd.pid || _fail
+test -e /var/run/sshd.pid && {
+    sshdpid=$( cat /var/run/sshd.pid )
+    test -e /proc/$sshdpid/stat || _fail
+}
+EOF
+
+ln -sfT /usr/local/sbin/health_check.sh /etc/periodic/15min/health_check
 
 chown root:root /usr/local/sbin/*.sh
 chmod 0700 /usr/local/sbin/*.sh
 
-cat <<EOF > /etc/profile
-alias ll='ls -al'
-EOF
-
-echo "$NAME" > /etc/motd
-
 update_users.sh
 
-touch /var/ssh-box/sshd.log
-chmod 0600 /var/ssh-box/sshd.log
-"/usr/sbin/sshd" "-D" "-e" "-f" "/etc/ssh/sshd_config" 2>&1 | \
-  ts "%b %d %H:%M:%S $HOSTNAME sshd[$$]:" | \
-  tee -a /var/ssh-box/sshd.log
+rmdir /var/log || true
+ln -sfT "$basedir"/log /var/log
+touch "$basedir"/log/sshd.log
+chmod 0600 "$basedir"/log/*
+
+/usr/local/sbin/sshd_restart.sh
+crond -f -L "${basedir}/log/cron.log"

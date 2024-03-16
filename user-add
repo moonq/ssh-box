@@ -23,6 +23,6 @@ eval ${EDITOR:- vim} data/users/"${new_uid}-${new_user}"
 
 if test -s data/users/"${new_uid}-${new_user}"; then
     echo Running user update
-    make update-users
+    make user-update
 fi
 
